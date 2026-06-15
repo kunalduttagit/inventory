@@ -4,7 +4,7 @@ A small inventory & order management app: track products, customers, and orders,
 
 Built with **FastAPI** (Python), **Next.js 14** (TypeScript), **PostgreSQL**, and **Docker**.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/duttakunal/inventory)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/kunalduttagit/inventory)
 
 ---
 
@@ -54,7 +54,7 @@ DEPLOYMENT.md   Railway + Vercel deployment guide
 ## Run from published Docker Hub images (no source clone)
 
 ```bash
-curl -O https://raw.githubusercontent.com/duttakunal/inventory/main/docker-compose.hub.yml
+curl -O https://raw.githubusercontent.com/kunalduttagit/inventory/main/docker-compose.hub.yml
 docker compose -f docker-compose.hub.yml up -d
 ```
 
