@@ -1,0 +1,50 @@
+# Pulls published images from Docker Hub instead of building locally.
+# For end users who just want to run the app:
+#   curl -O https://raw.githubusercontent.com/<you>/inventory/main/docker-compose.hub.yml
+#   docker compose -f docker-compose.hub.yml up -d
+#
+# Replace `duttakunal` below with your Docker Hub username if you forked.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: inventory
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d inventory"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: duttakunal/inventory-backend:latest
+    pull_policy: always
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://root:root@db:5432/inventory
+      CORS_ORIGINS: "*"
+      LOW_STOCK_THRESHOLD: "10"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend:
+    image: duttakunal/inventory-frontend:latest
+    pull_policy: always
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
