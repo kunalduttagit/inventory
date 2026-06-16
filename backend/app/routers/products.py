@@ -1,11 +1,12 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Product
+from ..models import OrderItem, Product
 from ..schemas import ProductCreate, ProductOut, ProductUpdate
 
 router = APIRouter(prefix="/products", tags=["products"])
@@ -58,5 +59,25 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     product = db.get(Product, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+
+    # Products that appear on any order can't be hard-deleted without losing
+    # sales history. Block it with a clear 409 instead of letting Postgres
+    # raise a FK violation that bubbles up as 500.
+    refs = db.scalar(
+        select(func.count(OrderItem.id)).where(OrderItem.product_id == product_id)
+    )
+    if refs:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Cannot delete '{product.name}' — it appears on {refs} order"
+                f"{'s' if refs != 1 else ''}. Cancel those orders first."
+            ),
+        )
+
     db.delete(product)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Product is referenced by other records")
